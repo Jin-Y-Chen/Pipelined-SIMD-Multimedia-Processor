@@ -71,7 +71,7 @@ Multimedia_Processor_Unit (top)
 This section summarizes the implementation as documented in the course report: [`docs/datasheets/ESE345_Project_Report_2.pdf`](docs/datasheets/ESE345_Project_Report_2.pdf).
 
 ### `pc` + `instruction_file` — Instruction fetch (IF stage)
-The program counter increments on each enabled rising clock edge and addresses a 64-deep instruction store to fetch a 25-bit instruction word into the IF/ID register. A practical convention used in the documentation is to keep the last instruction as a **NOP** to avoid unintended behavior once the PC reaches its max count.
+The program counter increments on each enabled rising clock edge and addresses a 64-deep instruction storing 25-bit instructions word and fetch into the IF/ID register. A practical convention used in the documentation is to keep the last instruction as a **NOP** to avoid unintended behavior once the PC reaches its max count.
 
 ### `decoder` — Instruction field decode (ID stage)
 Parses the 25-bit instruction into the **opcode**, register pointers (`rs*`, `rd`), 16-bit immediate, and control signals (notably **write-back enable**) for the downstream register file / execute stage.
