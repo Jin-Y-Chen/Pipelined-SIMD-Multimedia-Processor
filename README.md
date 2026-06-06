@@ -120,10 +120,6 @@ This keeps the EX datapath readable while allowing the instruction set to be ext
 | **Peripheral** | `rtl/mmu_simple_v2/usart_rx/verification/` | UART program loader |
 | **System** | `sim/tb/mmu_simple_v2/Processor_Controller_tb.vhd` | FPGA top: CPU + memory + USART load FSM |
 
-### Synthesis (RTL view)
-![Synopsys RTL](docs/diagrams/mmu_simple_synposis.png)
-> Synthesis-oriented RTL hierarchy view showing the main instantiated blocks and top-level connectivity.
-
 ---
 
 ## Notes
