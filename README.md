@@ -1,5 +1,5 @@
 # Pipelined SIMD Multimedia Processor (RTL, VHDL)
-**Pipelined multimedia processor core implemented in VHDL, featuring a SIMD-style register file, reduced multimedia/MMU instruction subset, and a full IF → ID → EX → WB datapath with forwarding.**
+**Pipelined multimedia processor core implemented in VHDL, featuring a SIMD-style register file, reduced multimedia/MMU instruction subset, and a full IF -> ID -> EX -> WB datapath with forwarding.**
 
 <div align="center">
 
