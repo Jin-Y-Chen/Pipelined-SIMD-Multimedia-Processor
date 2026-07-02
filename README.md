@@ -1,5 +1,5 @@
 # Pipelined SIMD Multimedia Processor (RTL, VHDL)
-**A 4-stage pipelined multimedia processor core implemented in structural VHDL, featuring a SIMD-style register file, a reduced multimedia/MMU instruction subset, and a full IF → ID → EX → WB datapath with forwarding.**
+**Pipelined multimedia processor core implemented in VHDL, featuring a SIMD-style register file, reduced multimedia/MMU instruction subset, and a full IF/ID/EX/WB datapath with forwarding.**
 
 <div align="center">
 
@@ -21,7 +21,7 @@
   <img src="docs/diagrams/mmu_simple_rtl_v1.png" alt="Simple MMU Structural RTL" style="max-width:100%; height:auto;"/>
 </p>
 <p align="center">
-  <em>Figure 1: Structural RTL diagram of the 4-stage pipeline datapath (IF/ID/EX/WB) including inter-stage registers, forwarding path, and MMU execution block.</em>
+  <em>Figure 1: Main structural RTL diagram of the 4-stage pipeline datapath (IF/ID/EX/WB) including inter-stage registers, forwarding path, and MMU execution block.</em>
 </p>
 
 ## Overview
@@ -71,7 +71,7 @@ Multimedia_Processor_Unit (top)
 This section summarizes the implementation as documented in the course report: [`docs/datasheets/ESE345_Project_Report_2.pdf`](docs/datasheets/ESE345_Project_Report_2.pdf).
 
 ### `pc` + `instruction_file` — Instruction fetch (IF stage)
-The program counter increments on each enabled rising clock edge and addresses a 64-deep instruction store to fetch a 25-bit instruction word into the IF/ID register. A practical convention used in the documentation is to keep the last instruction as a **NOP** to avoid unintended behavior once the PC reaches its max count.
+The program counter increments on each enabled rising clock edge and addresses a 64-deep instruction storing 25-bit instructions word and fetch into the IF/ID register. A practical convention used in the documentation is to keep the last instruction as a **NOP** to avoid unintended behavior once the PC reaches its max count.
 
 ### `decoder` — Instruction field decode (ID stage)
 Parses the 25-bit instruction into the **opcode**, register pointers (`rs*`, `rd`), 16-bit immediate, and control signals (notably **write-back enable**) for the downstream register file / execute stage.
@@ -119,10 +119,6 @@ This keeps the EX datapath readable while allowing the instruction set to be ext
 | **Core** | `sim/tb/mmu_simple_v1/`, `rtl/mmu_simple_v2/mmu_cpu/*_tb.vhd` | Full 4-stage IF→WB datapath (v1 & v2) |
 | **Peripheral** | `rtl/mmu_simple_v2/usart_rx/verification/` | UART program loader |
 | **System** | `sim/tb/mmu_simple_v2/Processor_Controller_tb.vhd` | FPGA top: CPU + memory + USART load FSM |
-
-### Synthesis (RTL view)
-![Synopsys RTL](docs/diagrams/synposis_rtl.png)
-> Synthesis-oriented RTL hierarchy view showing the main instantiated blocks and top-level connectivity.
 
 ---
 
