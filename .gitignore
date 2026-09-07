@@ -1,0 +1,41 @@
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+*~
+*.swp
+
+# Vivado / XSim session files
+*.log
+*.jou
+*.str
+*.wdb
+*.pb
+*.exe
+.Xil/
+webtalk*
+vivado_pid*
+hs_err_pid*
+dfx_runtime.txt
+
+# Bitstreams: keep the FPGA deliverables, drop stray copies in RTL
+*.bit
+!fpga/**/*.bit
+
+# Simulation / tool build trees (scripts stay; generated projects do not)
+build/
+**/build/
+
+# Testbench dumps (instruction_file.txt is stimulus — keep it)
+**/internal_result/
+register_file.txt
+buffer_file.txt
+tsb_buffer.txt
+out_buffer.txt
+
+# Waveform / HDL sim intermediates
+*.vcd
+*.ghw
+*.cf
+xsim.dir/
+*.obj
