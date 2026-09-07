@@ -3,6 +3,9 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 package numeric_var is 
+--------SIMULATION---------------------------------------------------------------
+	constant PERIOD						: time := 10 ns;
+
 --------USART
     constant SAMPLE_COUNT               : integer := 8;
 

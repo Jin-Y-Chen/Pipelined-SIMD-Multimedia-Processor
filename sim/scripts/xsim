@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# Run the elaborated snapshot and open a live waveform GUI.
+#   source sim/scripts/vset
+#   xelab pc
+#   xsim
+#   xsim pc_tb
+#   xsim pc_tb -Time 10ms
+#   xsim -Batch            # headless: run then quit, no GUI
+
+set -u
+
+MMU_SIM_SCRIPTS=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=sim_lib.sh
+source "$MMU_SIM_SCRIPTS/sim_lib.sh"
+
+SNAP=""
+BATCH=0
+WCFG=""
+usage() {
+  echo "Usage: xsim [snapshot|tb] [-Time 1ms] [-Batch] [-Wcfg file] [-Vivado path] [-License path]"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -Time) MMU_SIM_TIME=$2; shift 2 ;;
+    -Batch|-batch) BATCH=1; shift ;;
+    -Wcfg) WCFG=$2; shift 2 ;;
+    -Vivado) MMU_VIVADO_ARG=$2; shift 2 ;;
+    -License) MMU_LICENSE_ARG=$2; shift 2 ;;
+    -Variant)
+      if ! set_sim_variant "$2"; then
+        exit 1
+      fi
+      shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    -*)
+      echo "Unknown flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      if [[ -z "$SNAP" ]]; then
+        SNAP=$1
+      else
+        echo "Extra argument: $1" >&2
+        exit 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+if ! require_vset; then
+  exit 1
+fi
+
+mkdir -p "$MMU_SIM_OUT" "$MMU_SIM_DUMP"
+
+resolve_snap() {
+  local s=$1
+  if [[ -z "$s" && -f "$MMU_SIM_OUT/latest_snap.txt" ]]; then
+    s=$(tr -d '\r' < "$MMU_SIM_OUT/latest_snap.txt" | head -n1)
+  fi
+  if [[ -n "$s" && "$s" != *_behav ]]; then
+    s=$(normalize_name "$s")
+    [[ "$s" == *_tb ]] || s=${s}_tb
+    s=${s}_behav
+  fi
+  printf '%s' "$s"
+}
+
+SNAP=$(resolve_snap "$SNAP")
+if [[ -z "$SNAP" ]]; then
+  echo "No snapshot. Run: xelab <dut> [tb]" >&2
+  exit 1
+fi
+
+TIME=$MMU_SIM_TIME
+if [[ "$TIME" == 1ms && "$SNAP" == Processor_Controller_tb_behav ]]; then
+  TIME=10ms
+fi
+
+LOG=$MMU_SIM_OUT/xsim.log
+RUN_TCL=$MMU_SIM_OUT/run.tcl
+{
+  printf 'log_wave -recursive /\n'
+  printf 'run %s\n' "$TIME"
+  if [[ "$BATCH" == 1 ]]; then
+    printf 'quit\n'
+  fi
+} > "$RUN_TCL"
+
+if [[ "$BATCH" == 1 ]]; then
+  if is_windows_tool "$MMU_XSIM"; then
+    run_xilinx_cmd "$LOG" "\"$(to_win "$MMU_XSIM")\" $SNAP -tclbatch run.tcl"
+  else
+    run_xilinx_cmd "$LOG" "$MMU_XSIM" "$SNAP" -tclbatch "$RUN_TCL"
+  fi
+  rc=$?
+  if fail_from_log "$LOG"; then
+    exit 1
+  fi
+  if [[ "$rc" != 0 ]]; then
+    cat "$LOG"
+    echo "xsim exited with code $rc" >&2
+    exit "$rc"
+  fi
+  wdb=$(find "$MMU_SIM_OUT" -type f -name "${SNAP}.wdb" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-)
+  if [[ -z "$wdb" ]]; then
+    wdb=$(find "$MMU_SIM_OUT" -type f -name '*.wdb' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | cut -d' ' -f2-)
+  fi
+  if [[ -n "$wdb" ]]; then
+    printf '%s\n' "$wdb" > "$MMU_SIM_OUT/latest_wdb.txt"
+  fi
+  harvest_dumps
+  exit 0
+fi
+
+# Live snapshot + waveform in this terminal. run.tcl has no quit, so `run` still works in the GUI.
+if [[ -n "$WCFG" ]]; then
+  start_xsim_gui "$LOG" "$SNAP" -gui -tclbatch run.tcl -view "$(to_win "$WCFG")"
+else
+  start_xsim_gui "$LOG" "$SNAP" -gui -tclbatch run.tcl
+fi
+harvest_dumps
+exit 0

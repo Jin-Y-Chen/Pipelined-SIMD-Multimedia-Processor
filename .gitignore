@@ -25,9 +25,14 @@ dfx_runtime.txt
 # Simulation / tool build trees (scripts stay; generated projects do not)
 build/
 **/build/
+sim/work/*
+!sim/work/.gitkeep
+sim/internal/*
+!sim/internal/.gitkeep
 
 # Testbench dumps (instruction_file.txt is stimulus — keep it)
 **/internal_result/
+sim/scripts/internal/*.txt
 register_file.txt
 buffer_file.txt
 tsb_buffer.txt

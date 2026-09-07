@@ -1,0 +1,5 @@
+# Keep bash launchers executable on WSL checkouts
+sim/scripts/*.sh text eol=lf
+sim/scripts/vset text eol=lf
+sim/scripts/xelab text eol=lf
+sim/scripts/xsim text eol=lf

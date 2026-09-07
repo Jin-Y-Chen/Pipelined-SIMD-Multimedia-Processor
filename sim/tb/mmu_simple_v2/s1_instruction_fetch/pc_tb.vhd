@@ -54,7 +54,8 @@ begin
 	               ", got=" & integer'image(to_integer(unsigned(pc_count)))
 	               severity error;
 	
-	    expected := (expected + INCREMENT) mod 2**COUNTER_LENGTH;
+	    -- 6-bit unsigned add wraps naturally; `mod 2**6` is 64 (7 bits) and fatals in XSim.
+	    expected := expected + INCREMENT;
 	end loop;
 
         report "PC counter test completed successfully!" severity note;

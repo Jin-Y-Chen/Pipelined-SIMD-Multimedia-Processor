@@ -1,0 +1,47 @@
+# Source Vivado into this shell. Does not compile or simulate.
+#
+#   source sim/scripts/vset
+#   source sim/scripts/vset mmu_branch_v1
+#   source sim/scripts/vset rtl/mmu_simple_v2
+#   source sim/scripts/vset -Variant mmu_simple_v2
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  echo "Source this file into the current shell (no simulation is run):"
+  echo "  source sim/scripts/vset [variant]"
+  echo "  source sim/scripts/vset mmu_branch_v1"
+  echo "  source sim/scripts/vset rtl/mmu_simple_v2"
+  exit 1
+fi
+
+MMU_SIM_SCRIPTS=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=sim_lib.sh
+source "$MMU_SIM_SCRIPTS/sim_lib.sh"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -Variant|--variant)
+      if ! set_sim_variant "$2"; then
+        return 1
+      fi
+      shift 2
+      ;;
+    -h|--help)
+      echo "Usage: source sim/scripts/vset [variant]"
+      echo "  variant: mmu_simple_v2 | mmu_branch_v1 | rtl/<name>"
+      return 0
+      ;;
+    -*)
+      echo "Unknown flag: $1" >&2
+      echo "Usage: source sim/scripts/vset [variant]" >&2
+      return 1
+      ;;
+    *)
+      if ! set_sim_variant "$1"; then
+        return 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+mmu_vset

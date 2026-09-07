@@ -115,9 +115,9 @@ This keeps the EX datapath readable while allowing the instruction set to be ext
 
 | Level | Where | What was validated |
 |-------|--------|-------------------|
-| **Block** | `rtl/mmu_simple_v*/**/verification/` | Each pipeline stage and MMU opcode group in isolation |
-| **Core** | `sim/tb/mmu_simple_v1/`, `rtl/mmu_simple_v2/mmu_cpu/*_tb.vhd` | Full 4-stage IF→WB datapath (v1 & v2) |
-| **Peripheral** | `rtl/mmu_simple_v2/usart_rx/verification/` | UART program loader |
+| **Block** | `sim/tb/mmu_simple_v*/**/` | Each pipeline stage and MMU opcode group in isolation |
+| **Core** | `sim/tb/mmu_simple_v1/`, `sim/tb/mmu_simple_v2/Multimedia_Processor_Unit_tb.vhd` | Full 4-stage IF→WB datapath (v1 & v2) |
+| **Peripheral** | `sim/tb/mmu_simple_v2/usart_rx/` | UART program loader |
 | **System** | `sim/tb/mmu_simple_v2/Processor_Controller_tb.vhd` | FPGA top: CPU + memory + USART load FSM |
 
 ---

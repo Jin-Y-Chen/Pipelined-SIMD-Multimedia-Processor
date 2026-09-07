@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+# Compile VHDL (xvhdl) and elaborate (xelab). Does not run the sim.
+# Compiles the DUT, its testbench, and work.* dependencies only.
+#   source sim/scripts/vset
+#   xelab pc
+#   xelab pc pc_tb -Variant mmu_simple_v2
+
+set -u
+
+MMU_SIM_SCRIPTS=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=sim_lib.sh
+source "$MMU_SIM_SCRIPTS/sim_lib.sh"
+
+DUT=""
+TB="."
+usage() {
+  echo "Usage: xelab <dut> [tb] [-Variant name] [-Vivado path] [-License path]"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -Variant) 
+      if ! set_sim_variant "$2"; then
+        exit 1
+      fi
+      shift 2 ;;
+    -Vivado) MMU_VIVADO_ARG=$2; shift 2 ;;
+    -License) MMU_LICENSE_ARG=$2; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    -*)
+      echo "Unknown flag: $1" >&2
+      usage
+      exit 1
+      ;;
+    *)
+      if [[ -z "$DUT" ]]; then
+        DUT=$1
+      elif [[ "$TB" == "." ]]; then
+        TB=$1
+      else
+        echo "Extra argument: $1" >&2
+        exit 1
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$DUT" ]]; then
+  usage
+  exit 1
+fi
+
+if ! require_vset; then
+  exit 1
+fi
+
+RTL=$MMU_SIM_REPO/rtl/$MMU_SIM_VARIANT
+TBTREE=$MMU_SIM_REPO/sim/tb/$MMU_SIM_VARIANT
+if [[ ! -d "$RTL" ]]; then
+  echo "RTL tree missing: $RTL" >&2
+  exit 1
+fi
+if [[ ! -d "$TBTREE" ]]; then
+  echo "Testbench tree missing: $TBTREE" >&2
+  exit 1
+fi
+
+if ! collect_sources "$RTL" "$TBTREE" "$DUT" "$TB"; then
+  exit 1
+fi
+
+mkdir -p "$MMU_SIM_OUT" "$MMU_SIM_DUMP"
+PRJ=$MMU_SIM_OUT/sources.prj
+write_prj "$PRJ"
+printf '%s\n' "$MMU_SNAP" > "$MMU_SIM_OUT/latest_snap.txt"
+
+LOG=$MMU_SIM_OUT/xelab.log
+: > "$LOG"
+
+run_compile() {
+  copy_into_log() {
+    local src=$1
+    [[ -f "$src" ]] || return 0
+    cat "$src" >> "$LOG"
+  }
+
+  if is_windows_tool "$MMU_XVHDL"; then
+    if ! run_xilinx_cmd "$MMU_SIM_OUT/xvhdl.log" "\"$(to_win "$MMU_XVHDL")\" --incr --relax -prj sources.prj"; then
+      copy_into_log "$MMU_SIM_OUT/xvhdl.log"
+      cat "$MMU_SIM_OUT/xvhdl.log"
+      return 1
+    fi
+    copy_into_log "$MMU_SIM_OUT/xvhdl.log"
+    if fail_from_log "$MMU_SIM_OUT/xvhdl.log"; then
+      return 1
+    fi
+    if ! run_xilinx_cmd "$MMU_SIM_OUT/xelab_run.log" "\"$(to_win "$MMU_XELAB")\" --incr --debug typical --relax --mt 2 --snapshot $MMU_SNAP work.$MMU_TB_TOP"; then
+      copy_into_log "$MMU_SIM_OUT/xelab_run.log"
+      cat "$MMU_SIM_OUT/xelab_run.log"
+      return 1
+    fi
+    copy_into_log "$MMU_SIM_OUT/xelab_run.log"
+  else
+    if ! run_xilinx_cmd "$MMU_SIM_OUT/xvhdl.log" "$MMU_XVHDL" --incr --relax -prj "$PRJ"; then
+      copy_into_log "$MMU_SIM_OUT/xvhdl.log"
+      cat "$MMU_SIM_OUT/xvhdl.log"
+      return 1
+    fi
+    copy_into_log "$MMU_SIM_OUT/xvhdl.log"
+    if fail_from_log "$MMU_SIM_OUT/xvhdl.log"; then
+      return 1
+    fi
+    if ! run_xilinx_cmd "$MMU_SIM_OUT/xelab_run.log" "$MMU_XELAB" --incr --debug typical --relax --mt 2 --snapshot "$MMU_SNAP" "work.$MMU_TB_TOP"; then
+      copy_into_log "$MMU_SIM_OUT/xelab_run.log"
+      cat "$MMU_SIM_OUT/xelab_run.log"
+      return 1
+    fi
+    copy_into_log "$MMU_SIM_OUT/xelab_run.log"
+  fi
+  if fail_from_log "$LOG"; then
+    return 1
+  fi
+  return 0
+}
+
+if ! run_compile; then
+  exit 1
+fi
+exit 0
